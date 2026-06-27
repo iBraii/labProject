@@ -1,0 +1,7 @@
+#include "Config.h"
+
+MFRC522 mfrc522(SS_PIN, RST_PIN);
+U8G2_SSD1327_MIDAS_128X128_1_HW_I2C u8g2(
+  U8G2_R0,
+  U8X8_PIN_NONE
+);

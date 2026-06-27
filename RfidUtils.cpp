@@ -1,0 +1,63 @@
+#include "RFIDUtils.h"
+
+// TAGS
+Operation operations[3] = {
+  {{{0x22, 0x56, 0xEC, 0xF0}, 4}, ADDITION},
+  {{{0x00, 0x17, 0x33, 0x60}, 4}, SUBTRACTION},
+  {{{0xD2, 0x21, 0x1C, 0xF1}, 4}, MULTIPLICATION}
+};
+
+Card cards[10] = {
+  {{{0x04, 0xA3, 0x2F, 0xF6, 0x40, 0x02, 0x89}, 7}, 0},
+  {{{0x04, 0x43, 0x9B, 0x99, 0x3A, 0x02, 0x89}, 7}, 1},
+  {{{0x04, 0x1E, 0x39, 0x50, 0xD1, 0x2A, 0x81}, 7}, 2},
+  {{{0x04, 0xC3, 0x98, 0xDE, 0x3A, 0x02, 0x89}, 7}, 3},
+  {{{0x04, 0xE7, 0x97, 0x5D, 0xCF, 0x2A, 0x81}, 7}, 4},
+  {{{0x04, 0xB3, 0x0C, 0xAC, 0x3A, 0x02, 0x89}, 7}, 5},
+  {{{0x04, 0xC9, 0x1D, 0x51, 0xD1, 0x2A, 0x81}, 7}, 6},
+  {{{0x04, 0x43, 0xE8, 0xE4, 0x3A, 0x02, 0x89}, 7}, 7},
+  {{{0x04, 0x23, 0x2A, 0x00, 0x41, 0x02, 0x89}, 7}, 8},
+  {{{0x04, 0x33, 0xC2, 0xB6, 0x3A, 0x02, 0x89}, 7}, 9},
+};
+
+bool readCard() {
+  if (!mfrc522.PICC_IsNewCardPresent()) return false;
+  if (!mfrc522.PICC_ReadCardSerial()) return false;
+  return true;
+}
+
+bool matchUID(MFRC522::Uid *uid, RFIDEntity &entity) {
+  if (uid->size != entity.size) return false;
+
+  for (byte i = 0; i < uid->size; i++) {
+    if (uid->uidByte[i] != entity.uid[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+OperationType getOperation(MFRC522::Uid *uid) {
+  int total = sizeof(operations) / sizeof(Operation);
+
+  for (int i = 0; i < total; i++) {
+    if (matchUID(uid, operations[i].tag)) {
+      return operations[i].operation;
+    }
+  }
+
+  return INVALID;
+}
+
+int getCardValue(MFRC522::Uid *uid) {
+  int total = sizeof(cards) / sizeof(Card);
+
+  for (int i = 0; i < total; i++) {
+    if (matchUID(uid, cards[i].tag)) {
+      return cards[i].value;
+    }
+  }
+
+  return -1;
+}
