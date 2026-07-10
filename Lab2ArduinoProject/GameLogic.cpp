@@ -23,8 +23,7 @@ int score = 0;
 int combo = 0;
 bool allBossesCleared = false;
 
-// Boss concept: each boss IS one operator.
-// Sumi = addition, Minus = subtraction, Multiplor = multiplication.
+// Each boss represents exactly one operator.
 BossLevel bosses[] = {
   {"Sumi",      ADDITION,       4, 3},
   {"Minus",     SUBTRACTION,    4, 3},
@@ -63,17 +62,7 @@ char getOperationSymbol(OperationType operation) {
   }
 }
 
-void setEyesForOperation(OperationType operation) {
-  switch (operation) {
-    case ADDITION:       currentEyes = EYES_PLUS; break;
-    case SUBTRACTION:    currentEyes = EYES_MINUS; break;
-    case MULTIPLICATION: currentEyes = EYES_MULTIPLY; break;
-    default:             currentEyes = EYES_NORMAL; break;
-  }
-}
-
 int getBossProgress() {
-  // Number of correct hits already landed on this boss.
   return bosses[currentBossIndex].maxHP - bossHP;
 }
 
@@ -94,8 +83,9 @@ void startBoss(int index) {
   inputCount = 0;
   currentOperation = bosses[currentBossIndex].operation;
 
-  setEyesForOperation(currentOperation);
-  currentExpression = FACE_EVIL;
+  // Neutral/stern face while waiting for the correct boss card.
+  currentExpression = FACE_IDLE;
+  currentEyes = EYES_NORMAL;
   state = WAIT_OPERATION;
   screenDirty = true;
 }
@@ -116,7 +106,6 @@ void continueAfterBossDefeated() {
 }
 
 void prepareNextRound() {
-  // Same boss, same operator, harder numbers as HP goes down.
   inputCount = 0;
   playerAnswer = 0;
   currentOperation = bosses[currentBossIndex].operation;
@@ -126,7 +115,7 @@ void prepareNextRound() {
 }
 
 // ── Debounced confirm button ─────────────────────────────────────
-// Active LOW with INPUT_PULLUP. This returns true once per real press.
+// Active LOW with INPUT_PULLUP. Returns true once per physical press.
 bool confirmPressed() {
   const unsigned long debounceMs = 45;
 
@@ -155,28 +144,28 @@ bool confirmPressed() {
 
 // ── Wait for the correct boss/operator tag ───────────────────────
 void waitOperation() {
-  if (readCard()) {
-    OperationType scannedOperation = getOperation(&mfrc522.uid);
-    OperationType expectedOperation = bosses[currentBossIndex].operation;
+  if (!readCard()) return;
 
-    if (scannedOperation == expectedOperation) {
-      currentOperation = expectedOperation;
-      generateOperands();
-      state = SHOW_OPERATION;
-    } else if (scannedOperation != INVALID) {
-      // Valid card, but wrong boss/order. Give feedback without changing boss.
-      currentExpression = FACE_ANGRY;
-      currentEyes = EYES_NORMAL;
-    }
+  OperationType scannedOperation = getOperation(&mfrc522.uid);
+  OperationType expectedOperation = bosses[currentBossIndex].operation;
 
-    screenDirty = true;
-    mfrc522.PICC_HaltA();
-    mfrc522.PCD_StopCrypto1();
+  if (scannedOperation == expectedOperation) {
+    currentOperation = expectedOperation;
+    generateOperands();
+    state = SHOW_OPERATION;
+  } else if (scannedOperation != INVALID) {
+    // A valid but incorrect boss card makes the current boss taunt the player.
+    currentExpression = FACE_ANGRY;
+    currentEyes = EYES_NORMAL;
   }
+
+  screenDirty = true;
+  mfrc522.PICC_HaltA();
+  mfrc522.PCD_StopCrypto1();
 }
 
-// ── Generate operands for the current operator boss ───────────────
-// Answers stay 0–99 because the project currently accepts 2 digit scans.
+// ── Generate operands for the current operator boss ──────────────
+// Answers remain from 0 to 99 because input currently supports 2 digits.
 void generateOperands() {
   OperationType bossOperation = bosses[currentBossIndex].operation;
   int progress = getBossProgress();
@@ -185,9 +174,8 @@ void generateOperands() {
 
   switch (bossOperation) {
     case ADDITION: {
-      // Sumi: easy addition -> larger addition.
       int minValue = 1;
-      int maxValue = 8 + progress * 10;   // 8, 18, 28, 38...
+      int maxValue = 8 + progress * 10;
       if (maxValue > 49) maxValue = 49;
 
       do {
@@ -200,9 +188,9 @@ void generateOperands() {
     }
 
     case SUBTRACTION: {
-      // Minus: always non-negative, grows from small numbers to 2-digit numbers.
-      int maxA = 15 + progress * 20;      // 15, 35, 55, 75...
+      int maxA = 15 + progress * 20;
       if (maxA > 99) maxA = 99;
+
       int minA = 5 + progress * 5;
       if (minA >= maxA) minA = 5;
 
@@ -213,9 +201,8 @@ void generateOperands() {
     }
 
     case MULTIPLICATION: {
-      // Multiplor: starts with tiny tables, ends with full 1–9 tables.
       int minValue = 1;
-      int maxValue = 3 + progress * 2;    // 3, 5, 7, 9, 9...
+      int maxValue = 3 + progress * 2;
       if (maxValue > 9) maxValue = 9;
 
       operandA = random(minValue, maxValue + 1);
@@ -228,12 +215,13 @@ void generateOperands() {
       break;
   }
 
-  setEyesForOperation(currentOperation);
-  currentExpression = FACE_IDLE;
+  // During every equation the visible face is the angry operator boss.
+  currentExpression = FACE_EVIL;
+  currentEyes = EYES_NORMAL;
   screenDirty = true;
 }
 
-// ── Show chosen boss/operator for a short time, then enter input ──
+// ── Show the current boss/operator briefly ────────────────────────
 void showOperation() {
   static unsigned long startTime = 0;
 
@@ -249,7 +237,7 @@ void showOperation() {
   }
 }
 
-// ── Handle digit card scans and confirm button ────────────────────
+// ── Handle number cards and the confirm button ───────────────────
 void handleInput() {
   bool pressed = confirmPressed();
 
@@ -258,8 +246,8 @@ void handleInput() {
 
     if (value >= 0 && value <= 9 && inputCount < 2) {
       inputDigits[inputCount++] = value;
-      currentExpression = FACE_IDLE;
-      setEyesForOperation(currentOperation);
+      currentExpression = FACE_EVIL;
+      currentEyes = EYES_NORMAL;
       screenDirty = true;
     }
 
@@ -270,6 +258,7 @@ void handleInput() {
   if (!pressed) return;
 
   if (inputCount == 0) {
+    // Confirming without digits makes the boss taunt the player.
     currentExpression = FACE_ANGRY;
     currentEyes = EYES_NORMAL;
     screenDirty = true;
@@ -290,12 +279,12 @@ void handleInput() {
 
 // ── Apply combat result ───────────────────────────────────────────
 void resolveAnswer() {
+  currentEyes = EYES_NORMAL;
+
   if (playerAnswer == correctAnswer) {
     bossHP--;
     score += 10 + (currentBossIndex * 10) + (combo * 3);
     combo++;
-
-    currentEyes = EYES_NORMAL;
 
     if (bossHP <= 0) {
       bossHP = 0;
@@ -303,6 +292,7 @@ void resolveAnswer() {
       currentExpression = FACE_WIN;
       state = BOSS_DEFEATED;
     } else {
+      // The face is the boss, so a correct answer makes it look damaged.
       currentExpression = FACE_SAD;
       state = WIN;
     }
@@ -311,8 +301,8 @@ void resolveAnswer() {
     if (playerLives < 0) playerLives = 0;
     combo = 0;
 
-    currentExpression = FACE_EVIL;
-    currentEyes = EYES_NORMAL;
+    // The boss dominates/taunts the player after an incorrect answer.
+    currentExpression = FACE_ANGRY;
 
     if (playerLives <= 0) {
       state = GAME_OVER;

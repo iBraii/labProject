@@ -4,82 +4,92 @@
 
 bool screenDirty = true;
 
-FaceExpression currentExpression = FACE_EVIL;
+FaceExpression currentExpression = FACE_IDLE;
 EyeMode currentEyes = EYES_NORMAL;
 
-// ── Eye shapes ────────────────────────────────────────────────────
-void drawBaseEye(int x, int y) {
-  u8g2.drawRBox(x, y, 28, 20, 6);
+// ── Small drawing helpers ─────────────────────────────────────────
+void drawCenteredText(int baselineY, const char* text) {
+  int width = u8g2.getStrWidth(text);
+  int x = (SCREEN_WIDTH - width) / 2;
+  if (x < 0) x = 0;
+  u8g2.drawStr(x, baselineY, text);
 }
 
-void drawIdleEyes() {
-  drawBaseEye(22, 30);
-  drawBaseEye(78, 30);
-}
-
-void drawBlinkEyes() {
-  u8g2.drawBox(22, 40, 28, 2);
-  u8g2.drawBox(78, 40, 28, 2);
-}
-
-void drawEvilEyes() {
-  drawBaseEye(22, 30);
-  drawBaseEye(78, 30);
-
-  u8g2.setDrawColor(0);
-  u8g2.drawTriangle(22, 30, 50, 30, 50, 50);
-  u8g2.drawTriangle(78, 30, 106, 30, 78, 50);
-  u8g2.setDrawColor(1);
-}
-
-void drawSadEyes() {
-  drawBaseEye(22, 30);
-  drawBaseEye(78, 30);
-
-  u8g2.setDrawColor(0);
-  u8g2.drawTriangle(22, 30, 50, 30, 22, 50);
-  u8g2.drawTriangle(78, 30, 106, 30, 106, 50);
-  u8g2.setDrawColor(1);
-}
-
-void drawAngryEyes() {
-  drawBaseEye(22, 30);
-  drawBaseEye(78, 30);
-
-  u8g2.setDrawColor(0);
-  u8g2.drawBox(22, 30, 28, 10);
-  u8g2.drawBox(78, 30, 28, 10);
-  u8g2.setDrawColor(1);
-}
-
-void drawXEyes() {
-  for (int8_t t = -1; t <= 1; t++) {
-    u8g2.drawLine(22, 30 + t, 50, 50 + t);
-    u8g2.drawLine(22, 50 + t, 50, 30 + t);
-    u8g2.drawLine(78, 30 + t, 106, 50 + t);
-    u8g2.drawLine(78, 50 + t, 106, 30 + t);
+void drawThickLine(int x1, int y1, int x2, int y2, byte thickness = 2) {
+  for (byte i = 0; i < thickness; i++) {
+    u8g2.drawLine(x1, y1 + i, x2, y2 + i);
   }
 }
 
-void drawOperatorEyes() {
-  u8g2.setFont(u8g2_font_logisoso24_tf);
+// ── Large boss eyes ───────────────────────────────────────────────
+// The screen only draws the boss face itself: eyes and mouth.
+// No robot head and no external RoboEyes library are required.
 
-  switch (currentEyes) {
-    case EYES_PLUS:
-      u8g2.drawStr(28, 50, "+");
-      u8g2.drawStr(84, 50, "+");
-      break;
-    case EYES_MINUS:
-      u8g2.drawStr(30, 50, "-");
-      u8g2.drawStr(86, 50, "-");
-      break;
-    case EYES_MULTIPLY:
-      u8g2.drawStr(28, 50, "x");
-      u8g2.drawStr(84, 50, "x");
-      break;
-    default:
-      drawIdleEyes();
-      break;
+void drawLargeBaseEye(int x, int y, int width = 36, int height = 38) {
+  u8g2.drawRBox(x, y, width, height, 8);
+}
+
+void drawIdleEyes() {
+  drawLargeBaseEye(14, 26);
+  drawLargeBaseEye(78, 26);
+}
+
+void drawBlinkEyes() {
+  u8g2.drawRBox(14, 44, 36, 4, 2);
+  u8g2.drawRBox(78, 44, 36, 4, 2);
+}
+
+// Angry combat eyes: the upper edges lean down toward the center.
+void drawEvilEyes() {
+  drawLargeBaseEye(14, 25, 40, 40);
+  drawLargeBaseEye(74, 25, 40, 40);
+
+  u8g2.setDrawColor(0);
+  u8g2.drawTriangle(14, 25, 54, 25, 54, 45);
+  u8g2.drawTriangle(74, 25, 114, 25, 74, 45);
+  u8g2.setDrawColor(1);
+}
+
+// Hurt eyes: same boss silhouette, but with visible damage cracks.
+void drawHurtEyes() {
+  drawEvilEyes();
+
+  u8g2.setDrawColor(0);
+
+  // Left eye crack
+  drawThickLine(42, 43, 34, 49, 2);
+  drawThickLine(34, 49, 39, 53, 2);
+  drawThickLine(34, 49, 29, 56, 2);
+
+  // Right eye crack
+  drawThickLine(86, 43, 94, 49, 2);
+  drawThickLine(94, 49, 89, 54, 2);
+  drawThickLine(94, 49, 99, 57, 2);
+
+  u8g2.setDrawColor(1);
+}
+
+// Taunting face shown when the player answers incorrectly.
+void drawTauntEyes() {
+  u8g2.drawRBox(14, 31, 40, 30, 8);
+  u8g2.drawRBox(74, 31, 40, 30, 8);
+
+  u8g2.setDrawColor(0);
+  u8g2.drawTriangle(14, 31, 54, 31, 54, 43);
+  u8g2.drawTriangle(74, 31, 114, 31, 74, 43);
+
+  // Narrow the lower edge slightly so the eyes feel smug/dominant.
+  u8g2.drawTriangle(14, 61, 54, 61, 14, 54);
+  u8g2.drawTriangle(74, 61, 114, 61, 114, 54);
+  u8g2.setDrawColor(1);
+}
+
+void drawDefeatedEyes() {
+  for (int8_t offset = -1; offset <= 1; offset++) {
+    u8g2.drawLine(16, 29 + offset, 52, 62 + offset);
+    u8g2.drawLine(16, 62 + offset, 52, 29 + offset);
+    u8g2.drawLine(76, 29 + offset, 112, 62 + offset);
+    u8g2.drawLine(76, 62 + offset, 112, 29 + offset);
   }
 }
 
@@ -93,50 +103,106 @@ void drawEyes() {
     case FACE_EVIL:
       drawEvilEyes();
       break;
-    case FACE_WIN:
-      drawXEyes();
-      break;
-    case FACE_SAD:
-      drawSadEyes();
-      break;
+
     case FACE_ANGRY:
-      drawAngryEyes();
+      drawTauntEyes();
       break;
+
+    case FACE_SAD:
+      drawHurtEyes();
+      break;
+
+    case FACE_WIN:
+      drawDefeatedEyes();
+      break;
+
     case FACE_IDLE:
     default:
-      if (currentEyes == EYES_PLUS || currentEyes == EYES_MINUS || currentEyes == EYES_MULTIPLY) {
-        drawOperatorEyes();
-      } else {
-        drawIdleEyes();
-      }
+      drawIdleEyes();
       break;
   }
 }
 
-// ── Mouth ─────────────────────────────────────────────────────────
+// ── Boss mouths ───────────────────────────────────────────────────
+void drawNeutralMouth() {
+  u8g2.drawRBox(53, 75, 22, 4, 2);
+}
+
+void drawCombatMouth() {
+  const int xs[] = {38, 46, 54, 62, 70, 78, 86, 94};
+  const int ys[] = {76, 70, 78, 70, 78, 70, 78, 76};
+
+  for (byte i = 0; i < 7; i++) {
+    drawThickLine(xs[i], ys[i], xs[i + 1], ys[i + 1], 2);
+  }
+}
+
+void drawHurtMouth() {
+  const int xs[] = {39, 47, 55, 63, 71, 79, 87, 95};
+  const int ys[] = {75, 80, 73, 81, 73, 81, 74, 79};
+
+  for (byte i = 0; i < 7; i++) {
+    drawThickLine(xs[i], ys[i], xs[i + 1], ys[i + 1], 2);
+  }
+}
+
+void drawTauntMouth() {
+  // Wide toothy grin.
+  u8g2.drawRBox(38, 70, 52, 17, 5);
+
+  u8g2.setDrawColor(0);
+  u8g2.drawRBox(41, 69, 46, 7, 3);
+
+  for (int x = 49; x <= 81; x += 11) {
+    u8g2.drawBox(x, 76, 3, 10);
+  }
+  u8g2.setDrawColor(1);
+}
+
+void drawDefeatedMouth() {
+  drawThickLine(49, 82, 64, 73, 2);
+  drawThickLine(64, 73, 79, 82, 2);
+}
+
 void drawMouth() {
   switch (currentExpression) {
-    case FACE_IDLE:
-      u8g2.drawBox(56, 76, 16, 2);
-      break;
     case FACE_EVIL:
-      u8g2.drawLine(54, 80, 74, 74);
+      drawCombatMouth();
       break;
+
     case FACE_ANGRY:
-      u8g2.drawBox(54, 76, 20, 3);
+      drawTauntMouth();
       break;
+
     case FACE_SAD:
+      drawHurtMouth();
+      break;
+
     case FACE_WIN:
-      u8g2.drawLine(54, 74, 74, 80);
+      drawDefeatedMouth();
+      break;
+
+    case FACE_IDLE:
+    default:
+      drawNeutralMouth();
       break;
   }
 }
 
+// ── Persistent HUD ────────────────────────────────────────────────
 void drawHud() {
   char hud[32];
 
   u8g2.setFont(u8g2_font_5x8_tf);
-  snprintf(hud, sizeof(hud), "B%d/%d %s", currentBossIndex + 1, getBossCount(), getCurrentBossName());
+  snprintf(
+    hud,
+    sizeof(hud),
+    "B%d/%d %s (%c)",
+    currentBossIndex + 1,
+    getBossCount(),
+    getCurrentBossName(),
+    getOperationSymbol(getCurrentBossOperation())
+  );
   u8g2.drawStr(2, 8, hud);
 
   snprintf(hud, sizeof(hud), "HP:%d  V:%d  S:%d", bossHP, playerLives, score);
@@ -145,14 +211,14 @@ void drawHud() {
 
 void drawOperationName() {
   char line[32];
-  snprintf(line, sizeof(line), "%s!", getCurrentBossName());
 
   u8g2.setFont(u8g2_font_8x13_tf);
-  u8g2.drawStr(36, 105, line);
+  snprintf(line, sizeof(line), "%s!", getCurrentBossName());
+  drawCenteredText(104, line);
 
   u8g2.setFont(u8g2_font_6x12_tf);
   snprintf(line, sizeof(line), "Operacion: %c", getOperationSymbol(currentOperation));
-  u8g2.drawStr(26, 121, line);
+  drawCenteredText(121, line);
 }
 
 void drawEquation() {
@@ -169,16 +235,19 @@ void drawEquation() {
     snprintf(equation, sizeof(equation), "%d %c %d = %d%d", operandA, op, operandB, inputDigits[0], inputDigits[1]);
   }
 
-  u8g2.drawStr(14, 110, equation);
+  drawCenteredText(108, equation);
 
+  u8g2.setFont(u8g2_font_5x8_tf);
   if (combo > 1) {
-    char comboText[16];
+    char comboText[20];
     snprintf(comboText, sizeof(comboText), "Combo x%d", combo);
-    u8g2.drawStr(38, 124, comboText);
+    drawCenteredText(124, comboText);
+  } else {
+    drawCenteredText(124, "Escanea y confirma");
   }
 }
 
-// ── Game text ─────────────────────────────────────────────────────
+// ── State-specific text and feedback ──────────────────────────────
 void drawGameText() {
   char text[32];
 
@@ -186,9 +255,11 @@ void drawGameText() {
     case WAIT_OPERATION:
       u8g2.setFont(u8g2_font_6x12_tf);
       snprintf(text, sizeof(text), "Escanea a %s", getCurrentBossName());
-      u8g2.drawStr(14, 104, text);
-      snprintf(text, sizeof(text), "Boss de %c", getOperationSymbol(getCurrentBossOperation()));
-      u8g2.drawStr(35, 119, text);
+      drawCenteredText(104, text);
+
+      u8g2.setFont(u8g2_font_5x8_tf);
+      snprintf(text, sizeof(text), "Jefe de %c", getOperationSymbol(getCurrentBossOperation()));
+      drawCenteredText(121, text);
       break;
 
     case SHOW_OPERATION:
@@ -202,38 +273,47 @@ void drawGameText() {
 
     case WIN:
       u8g2.setFont(u8g2_font_8x13_tf);
-      u8g2.drawStr(24, 104, "Buen golpe!");
-      u8g2.setFont(u8g2_font_6x12_tf);
-      snprintf(text, sizeof(text), "Combo:%d", combo);
-      u8g2.drawStr(42, 121, text);
+      drawCenteredText(102, "CORRECTO!");
+
+      u8g2.setFont(u8g2_font_5x8_tf);
+      drawCenteredText(115, "-1 vida al jefe");
+
+      snprintf(text, sizeof(text), "HP:%d  Combo:%d", bossHP, combo);
+      drawCenteredText(125, text);
       break;
 
     case LOSE:
       u8g2.setFont(u8g2_font_8x13_tf);
-      u8g2.drawStr(28, 104, "Fallaste!");
-      u8g2.setFont(u8g2_font_6x12_tf);
+      drawCenteredText(101, "INCORRECTO!");
+
+      u8g2.setFont(u8g2_font_5x8_tf);
       snprintf(text, sizeof(text), "Era: %d", lastCorrectAnswer);
-      u8g2.drawStr(42, 121, text);
+      drawCenteredText(114, text);
+      drawCenteredText(125, "Pierdes 1 vida");
       break;
 
     case BOSS_DEFEATED:
       u8g2.setFont(u8g2_font_8x13_tf);
       if (allBossesCleared) {
-        u8g2.drawStr(18, 104, "Ganaste todo!");
+        drawCenteredText(103, "GANASTE TODO!");
       } else {
-        u8g2.drawStr(14, 104, "Boss vencido!");
+        drawCenteredText(103, "JEFE VENCIDO!");
       }
-      u8g2.setFont(u8g2_font_6x12_tf);
+
+      u8g2.setFont(u8g2_font_5x8_tf);
       snprintf(text, sizeof(text), "Score: %d", score);
-      u8g2.drawStr(35, 121, text);
+      drawCenteredText(121, text);
       break;
 
     case GAME_OVER:
       u8g2.setFont(u8g2_font_8x13_tf);
-      u8g2.drawStr(28, 104, "Game Over");
-      u8g2.setFont(u8g2_font_6x12_tf);
+      drawCenteredText(101, "GAME OVER");
+
+      u8g2.setFont(u8g2_font_5x8_tf);
       snprintf(text, sizeof(text), "Era: %d", lastCorrectAnswer);
-      u8g2.drawStr(42, 121, text);
+      drawCenteredText(114, text);
+      snprintf(text, sizeof(text), "Score: %d", score);
+      drawCenteredText(125, text);
       break;
   }
 }
@@ -249,39 +329,49 @@ void renderCurrentScreen() {
   } while (u8g2.nextPage());
 }
 
-// ── Blink animation ───────────────────────────────────────────────
+// ── Idle-only blink animation ─────────────────────────────────────
 void updateAnimations() {
-  static unsigned long lastBlink = 0;
+  static unsigned long lastBlinkEnd = 0;
+  static unsigned long blinkStartedAt = 0;
   static bool blinking = false;
+
+  const unsigned long blinkInterval = 3000;
+  const unsigned long blinkDuration = 120;
 
   unsigned long now = millis();
 
-  if (!blinking && now - lastBlink > 3000) {
-    currentEyes = EYES_BLINK;
-    blinking = true;
-    lastBlink = now;
-    screenDirty = true;
-  } else if (blinking && now - lastBlink > 120) {
-    if (state == WAIT_INPUT || state == SHOW_OPERATION) {
-      switch (currentOperation) {
-        case ADDITION:       currentEyes = EYES_PLUS; break;
-        case SUBTRACTION:    currentEyes = EYES_MINUS; break;
-        case MULTIPLICATION: currentEyes = EYES_MULTIPLY; break;
-        default:             currentEyes = EYES_NORMAL; break;
-      }
-    } else if (state == WAIT_OPERATION) {
-      switch (getCurrentBossOperation()) {
-        case ADDITION:       currentEyes = EYES_PLUS; break;
-        case SUBTRACTION:    currentEyes = EYES_MINUS; break;
-        case MULTIPLICATION: currentEyes = EYES_MULTIPLY; break;
-        default:             currentEyes = EYES_NORMAL; break;
-      }
-    } else {
+  // The boss may only blink while calmly waiting for its operation card.
+  bool canBlink =
+    state == WAIT_OPERATION &&
+    currentExpression == FACE_IDLE;
+
+  // Immediately cancel a blink when gameplay or feedback begins.
+  if (!canBlink) {
+    if (blinking || currentEyes == EYES_BLINK) {
+      blinking = false;
       currentEyes = EYES_NORMAL;
+      screenDirty = true;
     }
 
+    // Start a fresh interval next time the boss becomes idle.
+    lastBlinkEnd = now;
+    return;
+  }
+
+  // Start blink.
+  if (!blinking && now - lastBlinkEnd >= blinkInterval) {
+    blinking = true;
+    blinkStartedAt = now;
+    currentEyes = EYES_BLINK;
+    screenDirty = true;
+    return;
+  }
+
+  // Finish blink.
+  if (blinking && now - blinkStartedAt >= blinkDuration) {
     blinking = false;
-    lastBlink = now;
+    currentEyes = EYES_NORMAL;
+    lastBlinkEnd = now;
     screenDirty = true;
   }
 }

@@ -3,22 +3,22 @@
 #include <Arduino.h>
 
 enum GameState {
-  WAIT_OPERATION,   // Waiting for the correct boss/operator card
-  SHOW_OPERATION,   // Brief boss intro before the equation
+  WAIT_OPERATION,   // Waiting for the current boss/operator card
+  SHOW_OPERATION,   // Brief boss introduction before the equation
   WAIT_INPUT,
   CHECK_RESULT,
-  WIN,              // Correct hit feedback
-  LOSE,             // Wrong answer feedback
+  WIN,              // Player hit the boss: boss looks damaged
+  LOSE,             // Player missed: boss taunts the player
   BOSS_DEFEATED,    // Current operator boss HP reached 0
   GAME_OVER         // Player lives reached 0
 };
 
 enum FaceExpression {
-  FACE_IDLE,
-  FACE_EVIL,
-  FACE_ANGRY,
-  FACE_SAD,
-  FACE_WIN          // Defeated robot: X eyes, drooping mouth
+  FACE_IDLE,        // Neutral/stern boss waiting to be scanned
+  FACE_EVIL,        // Active combat face
+  FACE_ANGRY,       // Dominant/taunting boss face
+  FACE_SAD,         // Boss hurt after losing one HP
+  FACE_WIN          // Boss defeated
 };
 
 enum EyeMode {
