@@ -193,15 +193,17 @@ void drawMouth() {
 void drawHud() {
   char bossText[18];
   char stageText[8];
-  char statsText[24];
+  char hpText[8];
+  char livesText[12];
+  char scoreText[12];
 
   u8g2.setDrawColor(1);
   u8g2.setFontMode(1);
 
-  // Misma fuente legible que se usa en la parte inferior.
-  u8g2.setFont(u8g2_font_6x12_tf);
+  // Exactamente la misma fuente usada en "Jefe de +".
+  u8g2.setFont(u8g2_font_5x8_tf);
 
-  // Primera línea: jefe y progreso.
+  // Primera fila: jefe y progreso.
   snprintf(
     bossText,
     sizeof(bossText),
@@ -209,6 +211,8 @@ void drawHud() {
     getCurrentBossName(),
     getOperationSymbol(getCurrentBossOperation())
   );
+
+  u8g2.drawStr(2, 10, bossText);
 
   snprintf(
     stageText,
@@ -218,29 +222,33 @@ void drawHud() {
     getBossCount()
   );
 
-  u8g2.drawStr(2, 11, bossText);
+  int stageX =
+    SCREEN_WIDTH - u8g2.getStrWidth(stageText) - 2;
 
-  int stageWidth = u8g2.getStrWidth(stageText);
-  u8g2.drawStr(SCREEN_WIDTH - stageWidth - 2, 11, stageText);
+  u8g2.drawStr(stageX, 10, stageText);
 
-  // Segunda línea: estadísticas abreviadas para que respiren.
+  // Segunda fila: cada estadística se dibuja por separado.
+  snprintf(hpText, sizeof(hpText), "HP:%d", bossHP);
+  u8g2.drawStr(2, 21, hpText);
+
   snprintf(
-    statsText,
-    sizeof(statsText),
-    "HP %d   V %d   P %d",
-    bossHP,
-    playerLives,
-    score
+    livesText,
+    sizeof(livesText),
+    "VIDAS:%d",
+    playerLives
   );
 
-  int statsWidth = u8g2.getStrWidth(statsText);
-  int statsX = (SCREEN_WIDTH - statsWidth) / 2;
+  int livesX =
+    (SCREEN_WIDTH - u8g2.getStrWidth(livesText)) / 2;
 
-  if (statsX < 0) {
-    statsX = 0;
-  }
+  u8g2.drawStr(livesX, 21, livesText);
 
-  u8g2.drawStr(statsX, 24, statsText);
+  snprintf(scoreText, sizeof(scoreText), "PTS:%d", score);
+
+  int scoreX =
+    SCREEN_WIDTH - u8g2.getStrWidth(scoreText) - 2;
+
+  u8g2.drawStr(scoreX, 21, scoreText);
 }
 
 void drawOperationName() {
