@@ -191,22 +191,28 @@ void drawMouth() {
 
 // ── Persistent HUD ────────────────────────────────────────────────
 void drawHud() {
-  char hud[32];
+  char leftTop[20];
+  char rightTop[10];
+  char stats[32];
 
-  u8g2.setFont(u8g2_font_5x8_tf);
-  snprintf(
-    hud,
-    sizeof(hud),
-    "B%d/%d %s (%c)",
-    currentBossIndex + 1,
-    getBossCount(),
-    getCurrentBossName(),
-    getOperationSymbol(getCurrentBossOperation())
-  );
-  u8g2.drawStr(2, 8, hud);
+  // Fuente pequeña pero más legible
+  u8g2.setFont(u8g2_font_4x6_tf);
 
-  snprintf(hud, sizeof(hud), "HP:%d  V:%d  S:%d", bossHP, playerLives, score);
-  u8g2.drawStr(2, 18, hud);
+  // Línea 1
+  snprintf(leftTop, sizeof(leftTop), "%s", getCurrentBossName());
+  snprintf(rightTop, sizeof(rightTop), "%d/%d", currentBossIndex + 1, getBossCount());
+
+  u8g2.drawStr(2, 6, leftTop);
+
+  int rightWidth = u8g2.getStrWidth(rightTop);
+  u8g2.drawStr(SCREEN_WIDTH - rightWidth - 2, 6, rightTop);
+
+  // Línea 2
+  snprintf(stats, sizeof(stats), "HP:%d  V:%d  P:%d", bossHP, playerLives, score);
+  u8g2.drawStr(2, 14, stats);
+
+  // Separador opcional
+  u8g2.drawHLine(0, 18, SCREEN_WIDTH);
 }
 
 void drawOperationName() {
