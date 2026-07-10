@@ -3,12 +3,14 @@
 #include <Arduino.h>
 
 enum GameState {
-  WAIT_OPERATION,
-  SHOW_OPERATION,
+  WAIT_OPERATION,   // Waiting for the correct boss/operator card
+  SHOW_OPERATION,   // Brief boss intro before the equation
   WAIT_INPUT,
   CHECK_RESULT,
-  WIN,
-  LOSE
+  WIN,              // Correct hit feedback
+  LOSE,             // Wrong answer feedback
+  BOSS_DEFEATED,    // Current operator boss HP reached 0
+  GAME_OVER         // Player lives reached 0
 };
 
 enum FaceExpression {
@@ -16,7 +18,7 @@ enum FaceExpression {
   FACE_EVIL,
   FACE_ANGRY,
   FACE_SAD,
-  FACE_WIN    // Defeated robot: X eyes, drooping mouth
+  FACE_WIN          // Defeated robot: X eyes, drooping mouth
 };
 
 enum EyeMode {
@@ -47,4 +49,11 @@ struct Operation {
 struct Card {
   RFIDEntity tag;
   int value;
+};
+
+struct BossLevel {
+  const char* name;
+  OperationType operation;
+  byte maxHP;
+  byte maxLives;
 };
