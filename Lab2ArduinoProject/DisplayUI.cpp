@@ -340,12 +340,12 @@ void updateAnimations() {
 
   unsigned long now = millis();
 
-  // The boss may only blink while calmly waiting for its operation card.
+  // Blink only while waiting for the current boss/operator card.
+  // Angry, damaged, taunting and defeated faces must stay visible.
   bool canBlink =
     state == WAIT_OPERATION &&
     currentExpression == FACE_IDLE;
 
-  // Immediately cancel a blink when gameplay or feedback begins.
   if (!canBlink) {
     if (blinking || currentEyes == EYES_BLINK) {
       blinking = false;
@@ -353,12 +353,10 @@ void updateAnimations() {
       screenDirty = true;
     }
 
-    // Start a fresh interval next time the boss becomes idle.
     lastBlinkEnd = now;
     return;
   }
 
-  // Start blink.
   if (!blinking && now - lastBlinkEnd >= blinkInterval) {
     blinking = true;
     blinkStartedAt = now;
@@ -367,7 +365,6 @@ void updateAnimations() {
     return;
   }
 
-  // Finish blink.
   if (blinking && now - blinkStartedAt >= blinkDuration) {
     blinking = false;
     currentEyes = EYES_NORMAL;

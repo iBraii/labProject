@@ -9,11 +9,9 @@
 #define CONFIRM_BTN 11
 
 // OUTPUT
-// Use one buzzer pin for every sound first. If you physically have two buzzers,
-// you can split this again later, but one pin is easier to debug.
-#define BUZZER_PIN 12
-#define BUZZER1 BUZZER_PIN
-#define BUZZER2 BUZZER_PIN
+// Separate buzzers: positive feedback and negative feedback.
+#define BUZZER1 13
+#define BUZZER2 7
 
 // Set to 1 if your buzzer is an ACTIVE buzzer module that only needs HIGH/LOW.
 // Keep 0 for a passive piezo buzzer that uses tone().

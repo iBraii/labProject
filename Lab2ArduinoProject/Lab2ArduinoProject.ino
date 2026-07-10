@@ -4,48 +4,49 @@
 #include "RFIDUtils.h"
 
 // ── Sound helpers ─────────────────────────────────────────────────
-// If the buzzer is passive, this uses tone().
-// If the buzzer is active, set USE_ACTIVE_BUZZER to 1 in Config.h.
+// BUZZER1 (pin 13): start, correct answer, boss defeated.
+// BUZZER2 (pin 7): wrong answer, game over.
+// If the buzzers are active, set USE_ACTIVE_BUZZER to 1 in Config.h.
 
-void beep(int frequency, int ms) {
+void beep(int buzzerPin, int frequency, int ms) {
 #if USE_ACTIVE_BUZZER
-  digitalWrite(BUZZER_PIN, HIGH);
+  digitalWrite(buzzerPin, HIGH);
   delay(ms);
-  digitalWrite(BUZZER_PIN, LOW);
+  digitalWrite(buzzerPin, LOW);
   delay(25);
 #else
-  tone(BUZZER_PIN, frequency, ms);
+  tone(buzzerPin, frequency, ms);
   delay(ms + 25);
-  noTone(BUZZER_PIN);
+  noTone(buzzerPin);
 #endif
 }
 
 void playStartSound() {
-  beep(880, 80);
-  beep(1175, 80);
+  beep(BUZZER1, 880, 80);
+  beep(BUZZER1, 1175, 80);
 }
 
 void playCorrectSound() {
-  beep(784, 70);
-  beep(1047, 90);
+  beep(BUZZER1, 784, 70);
+  beep(BUZZER1, 1047, 90);
 }
 
 void playWrongSound() {
-  beep(220, 120);
-  beep(165, 160);
+  beep(BUZZER2, 220, 120);
+  beep(BUZZER2, 165, 160);
 }
 
 void playBossDefeatedSound() {
-  beep(523, 100);
-  beep(659, 100);
-  beep(784, 120);
-  beep(1047, 180);
+  beep(BUZZER1, 523, 100);
+  beep(BUZZER1, 659, 100);
+  beep(BUZZER1, 784, 120);
+  beep(BUZZER1, 1047, 180);
 }
 
 void playGameOverSound() {
-  beep(392, 150);
-  beep(330, 150);
-  beep(262, 250);
+  beep(BUZZER2, 392, 150);
+  beep(BUZZER2, 330, 150);
+  beep(BUZZER2, 262, 250);
 }
 
 // ── LED blink helper ──────────────────────────────────────────────
@@ -73,7 +74,8 @@ void setup() {
   // Outputs
   pinMode(LED_RIGHT, OUTPUT);
   pinMode(LED_WRONG, OUTPUT);
-  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(BUZZER1, OUTPUT);
+  pinMode(BUZZER2, OUTPUT);
 
   // RFID
   mfrc522.PCD_Init();
@@ -148,10 +150,8 @@ void loop() {
       break;
   }
 
-  // Only blink during playable states so feedback screens are not overwritten.
-  if (state == WAIT_OPERATION || state == SHOW_OPERATION || state == WAIT_INPUT) {
-    updateAnimations();
-  }
+  // The boss only blinks while waiting for its operation card.
+  updateAnimations();
 
   if (screenDirty) {
     renderCurrentScreen();
