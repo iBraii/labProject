@@ -191,64 +191,44 @@ void drawMouth() {
 
 // ── Persistent HUD ────────────────────────────────────────────────
 void drawHud() {
-  char bossText[18];
-  char stageText[8];
-  char hpText[8];
-  char livesText[12];
-  char scoreText[12];
+  char headerLine[32];
+  char statsLine[32];
 
+  // Limpiar solamente el área del HUD.
+  // Se sigue usando el buffer por páginas _1_.
+  u8g2.setDrawColor(0);
+  u8g2.drawBox(0, 0, SCREEN_WIDTH, 24);
   u8g2.setDrawColor(1);
-  u8g2.setFontMode(1);
 
-  // Exactamente la misma fuente usada en "Jefe de +".
-  u8g2.setFont(u8g2_font_5x8_tf);
+  // Una cadena completa por línea.
+  u8g2.setFontMode(0);
+  u8g2.setFont(u8g2_font_6x10_tf);
 
-  // Primera fila: jefe y progreso.
   snprintf(
-    bossText,
-    sizeof(bossText),
-    "%s %c",
+    headerLine,
+    sizeof(headerLine),
+    "%s %c  %d/%d",
     getCurrentBossName(),
-    getOperationSymbol(getCurrentBossOperation())
-  );
-
-  u8g2.drawStr(2, 10, bossText);
-
-  snprintf(
-    stageText,
-    sizeof(stageText),
-    "%d/%d",
+    getOperationSymbol(getCurrentBossOperation()),
     currentBossIndex + 1,
     getBossCount()
   );
 
-  int stageX =
-    SCREEN_WIDTH - u8g2.getStrWidth(stageText) - 2;
-
-  u8g2.drawStr(stageX, 10, stageText);
-
-  // Segunda fila: cada estadística se dibuja por separado.
-  snprintf(hpText, sizeof(hpText), "HP:%d", bossHP);
-  u8g2.drawStr(2, 21, hpText);
+  drawCenteredText(9, headerLine);
 
   snprintf(
-    livesText,
-    sizeof(livesText),
-    "VIDAS:%d",
-    playerLives
+    statsLine,
+    sizeof(statsLine),
+    "HP:%d  V:%d  P:%d",
+    bossHP,
+    playerLives,
+    score
   );
 
-  int livesX =
-    (SCREEN_WIDTH - u8g2.getStrWidth(livesText)) / 2;
+  drawCenteredText(22, statsLine);
 
-  u8g2.drawStr(livesX, 21, livesText);
-
-  snprintf(scoreText, sizeof(scoreText), "PTS:%d", score);
-
-  int scoreX =
-    SCREEN_WIDTH - u8g2.getStrWidth(scoreText) - 2;
-
-  u8g2.drawStr(scoreX, 21, scoreText);
+  // Restaurar el modo usado por los demás textos.
+  u8g2.setFontMode(1);
 }
 
 void drawOperationName() {
